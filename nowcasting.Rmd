@@ -63,6 +63,13 @@ Una vez obtenida la base anterior con 105 observaciones se emplearon las herrami
 </center>
 Las cifras en esta base obtenida con la herramienta de Google están estandarizadas por lo que se estandariza la nuestra variable objetivo y se unen las dos bases de acuerdo a la fecha . El resultados es una sola base con 105 renglones (observaciones) y 71 columnas (fecha, ventas de casas y 69 covariables).
 
+
+```{r}
+data_housing <- read.csv("./data/econ-HSN1FNSA.csv")
+head(data_housing)
+```
+
+
 <br>
 <br>
 
@@ -93,24 +100,32 @@ feasts::ACF(housing, HSN1FNSA, lag_max = 30) |> autoplot()
   
 
 ```
+
+(INTERPRETACION DE LAS GRÁFICAS)
+
 ```{r}
 feasts::PACF(housing, HSN1FNSA, lag_max = 30) |> autoplot() 
 ```
-(INTERPRETACION DE LAS GRÁFICAS)
+
 
 ### Modelo bayesiano estructural de series de tiempo
 
-Los modelos bayesianos estructurales de series de tiempo son modelos utilizados para la selección de covariables, forecasting, nowcasting, la inferencia del impacto causal y otras aplicaciones. La representación estado-espacio considerada para estos modelos es:
+Los modelos bayesianos estructurales de series de tiempo son modelos utilizados para la selección de covariables, forecasting, nowcasting, la inferencia del impacto causal y otras aplicaciones. La representación estado-espacio considerada para el modelo que se busca implementar es: 
 <center>
 ![](./Picture1.jpg)
-
 </center>
-<br>
-<br>
+Donde $\mu_t$ representa la tendencia, $\tau_t$ la estacionalidad y $\beta^Tx_t$ el componente de regresión.
+El componente de la tendencia es parecida a la ecuación de nivel pero con un término adicional $\delta_t$ que denota la cantidad extra de $\mu$ cuando damos un paso $t \rightarrow t+1$ y puede interpretarse como la pendiente de la tendencia lineal local multiplicada por $\Delta t$ que siempre es igual a 1. En general un modelo con tendencia lineal local es un modelo mejor que el modelo de nivel local si se cree que la serie de tiempo tiene una tendencia en una dirección particular y desea que los pronósticos futuros reflejen un aumento (o disminución) continuo visto en observaciones recientes. Mientras que el modelo de nivel local basa los pronósticos en torno al valor promedio de las observaciones recientes, el modelo de tendencia lineal local también agrega pendientes ascendentes o descendentes recientes. POr este motivo, para este trabajo buscamos comparar estos dos modelos.
 
-El modelo con enfoque bayesiano consta de tres componentes principales:
+La mejor forma de comprender el componente estacional $\tau_t$ es verlo como una regresión con variables estacionales dummies. En nuestro caso tenemos periodos mensuales, de manera que S=12.  El modelo de estados estacional incluye las 12 variables dummies pero restringe sus coeficientes para que sumen cero. Para el modelo de desempleo, Scott y Varian describieron el ciclo anual con los datos semanales de reclamaciones iniciales utilizando un componente estacional con S=52. Sabemos que las semanas dividen de manera perfecta a los años, pero dado el pequeño número de años para los cuales hay datos de Google disponibles, se consideró que la discontinuidad estacional ocasional de un período es irrelevante.
+
+
+Para lo antes mencionado, los modelos con enfoque bayesiano que buscamos implementar y comparar ,con la paquetería de BSTS en R, constan de tres técnicas principales:
+
 - Filtro Kalman. La técnica de descomposición de series temporales. En este paso, un investigador puede agregar diferentes variables de estado: tendencia, estacionalidad y otras.
+
 - Método de Spike-and-Slab. En este paso, se seleccionan los predictores de regresión más importantes.
+
 - Media del modelo bayesiano. Combinando los resultados y el cálculo de predicción.
 
 Se realizó un modelo inicial en donde solo se contempla la tendencia y estacionalidad
