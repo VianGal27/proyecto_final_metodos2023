@@ -21,33 +21,55 @@ library(feasts)
 
 
 #### Metodos Analíticos 2023
-> - Alberto Fuentes
-> - Vianey Galindo Añel
+> -   Vianey Galindo Añel
+> -   Alberto Fuentes Chavarría
 
 ## Predicción inmediata para la venta de casas usando la paquetería BSTS de R y búsquedas de Google.
 
-<div align="justify"> La predicción inmediata (nowcasting) es particularmente relevante para aquellas variables macroeconómicas clave que se recopilan con baja frecuencia, por ejemplo mensualmente o trimestralmente, y se publican con un retraso considerable. Para obtener "estimaciones tempranas" de tales indicadores económicos clave, los pronósticos inmediatos utilizan la información de datos que están relacionados con la variable objetivo pero que se recopilan con mayor frecuencia y se publican de una manera más oportuna.
+## Contexto
+<div align="justify"> La predicción inmediata (nowcasting) es una écnica poderosa que permite
+estimar y predecir variables económicas y sociales en tiempo real,
+proporcionando información valiosa para la toma de decisiones rápidas y
+fundamentadas. Utilizar *nowcasting* permite contar con estimaciones
+tempranas de variables que generalmente se conocen con cierto desface o
+retraso considerable.
 
+El *nowcasting* se vale de información de variables relacionadas con la
+variable objetivo y de las cuales si contamos con información de manera
+oportuna.
 
-Choi y Varian (2009, 2012) demostraron que los datos de búsqueda de Google podrían usarse como un señal externa para un modelo de predicción inmediata, pero sus métodos requerien seleccionar cuidadosamente el conjunto de predictores a utilizar.
+Esta tecnica tiene aplicaciones en diversos ámbitos como:
 
-(EJEMPLOS DE DESICIONES)Para decisiones económicas basadas en estos y otros números similares, sería útil tener un pronóstico anticipado del número del mes actual al cierre del mes.
+-   Economía: Calculo PIB, inflación, desempleo.
 
+-   Fianzas: Precios de acciones, bonos, divisas.
 
-<br>
-<br>
+-   Salud: Propragación de enfermedades.
 
-<center>
-</center>
+-   Medio ambiente: Clima, calidad del aire,
 
-<br>
+-   Retail: Demanda del consumidor.
+
+Choi y Varian (2009, 2012) demostraron que los datos de búsqueda de
+Google podrían usarse como un señal externa para un modelo de predicción
+inmediata, pero sus métodos requerien seleccionar cuidadosamente el
+conjunto de predictores a utilizar.
+
 <br>
 
 ## Objetivo
 
-El objetivo del presentre trabajo es analizar el comportamiento de la serie temporal de datos con cifras de casas nuevas vendidas y ajustar un modelo bayesiano de series de tiempo (BSTS) para hacer predicciones inmediatas y selección de variables explicativas, el cual contemple los siguientes aspectos:
-- Un módulo de series de tiempo, que capture la tendencia general y los patrones estacionales en los datos.
-- Un componente de regresión que permita la incorporación de datos exógenos (e.g. datos procedentes de búsquedas de Google Trends).
+El objetivo del presentre trabajo es analizar el comportamiento de la
+serie temporal de datos con cifras de ventas de casas nuevas y ajustar
+un modelo bayesiano de series de tiempo (BSTS) para hacer predicciones
+inmediatas y selección de variables explicativas, el cual contemple los
+siguientes aspectos:
+
+-   Un módulo de series de tiempo, que capture la tendencia general y
+    los patrones estacionales en los datos.
+
+-   Un componente de regresión que permita la incorporación de datos
+    exógenos (e.g. datos de Google Trends).
 
 
 ## Metodología
@@ -74,20 +96,25 @@ head(data_housing)
 <br>
 
 #### Visualización de los registros
-Las ventas de casas nuevas alcanzaron su punto máximo en 2005 y han estado disminuyendo desde luego. El índice de precios alcanzó su punto máximo a principios de 2007 y disminuyó constantemente durante varios meses.
+Las ventas de casas nuevas alcanzaron su punto máximo en marzo de 2005 y
+han estado disminuyendo desde entonces.
+  
 ```{r echo = FALSE}
 # lectura de datos 
 housing <- read.csv("./data/HSN1FNSA.csv", header = T) |> 
   mutate(DATE = as.Date(DATE)) |> 
   mutate(DATE = yearmonth(DATE))|> 
   as_tsibble(index=DATE)
-ggplot(housing, aes(x=DATE,y=HSN1FNSA, group = 1))+geom_line()
+ggplot(housing, aes(x=DATE,y=HSN1FNSA, group = 1))+geom_line()+
+  xlab("Fecha")+
+  ylab("Casas en miles")
 
 
 ```
 
-Además, de primera vista podemos intuir que existe una tendencia decreciente y una estacionalidad mensual, por lo que sería interezante ver como se comportan sus gráficas ACF y PACF.
-
+Además, podemos intuir que existe una tendencia decreciente y una
+estacionalidad mensual, por lo que sería interesante ver las gráficas
+ACF y PACF.
 
 ```{r echo = FALSE}
 
