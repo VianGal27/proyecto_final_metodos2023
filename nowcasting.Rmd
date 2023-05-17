@@ -97,7 +97,7 @@ head(data_housing |> select(1:10))
 <br>
 ## Serie de Tiempo
 
-#### Visualización de los registros
+#### Visualización de viviendas nuevas vendidas
   
 ```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
 # lectura de datos 
@@ -117,16 +117,27 @@ ggplot(housing, aes(x=DATE,y=HSN1FNSA, group = 1))+geom_line(size=1)+
 
 ```
 
+#### Tendencia
+
+```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
+ggplot(housing, aes(x=DATE,y=HSN1FNSA, group = 1))+geom_line(size=1, colour="darkgray")+
+  xlab("Fecha")+
+  ylab("Viviendas en miles")+
+  geom_smooth(se = FALSE, span = 0.5)+
+  theme_bw()
+```
+  
+  
 Gráficando las ventas de casas nuevas, observamos que alcanzaron su punto máximo en marzo de 2005.
 
 -   Su principal característica es la tendencia decreciente.
 
 -   Esta serie también tiene algo de estacionalidad mensual.
   
-  
+#### Estacionalidad (mensual)  
 
 ```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=7, fig.margin = TRUE}
-  gg_season(housing, HSN1FNSA, labels="right", labels_right_nudge=4, size=1, labels_repel = TRUE) + 
+  gg_season(housing, HSN1FNSA, labels="both", labels_right_nudge=4, size=1, labels_repel = TRUE) + 
   xlab("Mes")+
   ylab("Viviendas en miles")+
   theme_bw()
@@ -135,7 +146,7 @@ Gráficando las ventas de casas nuevas, observamos que alcanzaron su punto máxi
   
 Podemos observar un patrón fuerte de estacionalidad en los primeros tres años. Con el mes de Marzo con un pico de ventas importante, una disminución el resto del año con un ligero repunte en el mes de Octubre. A partir de Abril 2007 se observa un comportamiento atípico relacionado a la crisis sufrida en el mercado americano. Para los años 2011 y 2012 podemos observar nuevamente una ligera estacionalidad mensual.  
   
-
+#### Autocorrelación
 
 ```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
 # y <- ts(housing$HSN1FNSA, freq = 12, start = c(2004,1))
@@ -147,12 +158,22 @@ feasts::ACF(housing, HSN1FNSA, lag_max = 30) |> autoplot()
 ```
 
 
-(INTERPRETACION DE LAS GRÁFICAS)
+Esta ACF muestra correlaciones totales, capturando tanto el efecto de la tendencia, como la estacionalidad. Al tener una tendencia tan fuerte como veíamos en las gráficas anteriores, hace sentido que la serie tenga muy alta correlación con los meses inmediatos anteriores, en otras palabras el aspecto de la tendencia esta dominando nuestra gráfica ACF.
+
+Podríamos también preguntarnos por correlaciones parciales, es decir podriamos interesarnos por ver el efecto que tienen la ventas del mes de junio de 2012 en las ventas de septiembre de 2012 cotrolando por las ventas de julio y agosto de 2012.
+  
+<center>
+![](./pacf.png)
+</center>
+ 
+Es decir, buscamos la correlación directa, bloqueando la correlación que ocurre a través de otros meses intermedios.
+  
+  
 
 ```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
 feasts::PACF(housing, HSN1FNSA, lag_max = 30) |> autoplot() 
 ```
-
+Cuando condicionamos meses intermedios en nuestra serie, prácticamente todas las correlaciones parciales se encuentran en los intervalos del 95% (estos intervalos consideran la hipotesis de que los valores  de la serie no tienen autocorrelación). Estos datos podrían corresponder a un modelo subyacente autoregresivo de orden 1.
 
 ### Modelo bayesiano estructural de series de tiempo
 
