@@ -15,6 +15,7 @@ library(bsts)
 library(ggplot2)
 library(zoo)
 library(dplyr)
+library(tidyr)
 library(tsibble)
 library(feasts)
 library(ggrepel)
@@ -216,7 +217,7 @@ plot(model1, "components")
 pred1 <- predict(model1, horizon = 3)
 plot(pred1, plot.original = 102)
 ```
-<br>En un segundo modelo nos interesa tomar en cuenta la estacionalidad con periodo fijo de 12 y es  muy claro como hay mejoría de predicción, el intervalo de confianza se hace más pequeño.
+<br>En un segundo modelo nos interesa tomar en cuenta la estacionalidad con periodo fijo de 12 y es  muy claro como hay mejoría de predicción, el intervalo de confianza se hace más pequeño para los últimos 3 meses.
 ```{r}
 ss2 <- AddSeasonal(ss1, data_housing$HSN1FNSA, nseasons = 12)
 model2 <- bsts(data_housing$HSN1FNSA,
@@ -231,31 +232,39 @@ plot(pred2, plot.original = 102)
  
 ```
 
-Un tercer modelo contempla un componente de autocorelación 2 basado en las gráficas de autocorrelación y autocorrelación parcial previamente modstradas.
+Un tercer modelo contempla un componente de autocorelación 1 basado en las gráficas de autocorrelación y autocorrelación parcial previamente mostradas.
+Vemos en las siguientes gráficas que el intervalo de estimación para el componente trend se hace muy grande, lo cual de incio no es un buen indicador.
 
 ```{r}
-ss3 <- AddAr(ss2, data_housing$HSN1FNSA, lags = 2)
+ss3 <- AddAr(ss2, data_housing$HSN1FNSA, lags = 1)
 model3 <- bsts(data_housing$HSN1FNSA,
                state.specification = ss3,
-               niter = 2000)
+               niter = 2000, seed=12)
 
 plot(model3)
 plot(model3, "components")
 
-pred2 <- predict(model3, horizon = 3)
-plot(pred2, plot.original = 102)
+pred3 <- predict(model3, horizon = 3)
+plot(pred3, plot.original = 102)
+```
+Comparamos los tres modelos anteriores con la siguiente gráfica  y vemos que los errores acumulados para el modelo que incluye la componente de autoregresón es ligeramente mayor a la de los dos primeros modelos. Esto nos ayuda a tomar la desición de descartar el tercer modelo. Pareciera tambien que el modelo que incluye la estacionalidad tiene errores acumulados ligramente mayor que el que solo toma la tendencia pero debido a que en la gráfica de este modelo se aprecia menor varianza en la predicción no lo desechamos.
+```{r}
+CompareBstsModels(list("Modelo - trend" = model1,
+                       "Modelo - trend + season" = model2,
+                       "Modelo - trend + season + AR1" = model3),
+                  colors = c("black", "red", "blue"))
 ```
 
-
-Para definir si las variables obtenidas con las búsquedas de Google son útiles en la predicción inmediata que buscamos se realizó un un último modelo que considera el componente de regresión con 69 coeficientes para las covariables que queremos usar como regresoras.
-
-
+<br>
+Para definir si las variables obtenidas con las búsquedas de Google son útiles en la predicción inmediata que buscamos se realizó un un último modelo que considera el componente de regresión con 69 coeficientes para las covariables que queremos usar como regresoras. Este modelo solo toma en cuenta la estacionalidad y tendencia. El modelo también toma tamaño esperado inicial de 5, lo que corresponde al ajuste la probabilidad de inclusión a priori de 5/69 = 0.072.
 
 
-```{r message = FALSE, warning = FALSE}
+
+
+```{r, message = FALSE, warning = FALSE}
 #por default busca sólo tomar una variable
 model4 <- bsts( HSN1FNSA~ .,
-               state.specification = ss3,
+               state.specification = ss2,
                niter = 2000,
                data = select(data_housing, -1),
                expected.model.size = 5)
@@ -263,46 +272,65 @@ model4 <- bsts( HSN1FNSA~ .,
 plot(model4)
 plot(model4, "components")
 # model3
- pred4 <- predict(model4, horizon = 3, newdata = new_data)
-plot(pred4, plot.original = 103)
-# 
+pred4 <- predict(model4, horizon = 3, newdata = new_data)
+plot(pred4, plot.original = 102)
 
-
-ncol(model4$coef)
 ```
-
-
-Para saber si realmente hay una mejora usando los datos de Google comparamos los tres modelos.
-
+<br>
+Nos interesa ver la selección de variables 
 ```{r}
-CompareBstsModels(list("Modelo - trend" = model1,
-                       "Modelo - trend + season" = model2,
-                       "Modelo - trend + season + AR2" = model3,
-                       "Modelo - trend + season + AR2 + vars" = model4),
-                  colors = c("black", "red", "blue", "orange"))
+plot(model4, "coefficients", inc=.15, main = "Top de variables seleccionadas para el modelo 4")
 ```
-
-
-
-
-
-
-
-
-
-
-
-## Resultados
-
-Falco rufigularis es una especie que se encuentra principalmente en la parte sur del país, mostrando una continua idoneidad en las costas y en la península de Yucatán (el modelo generado tiene un AUC de 0.82 ).
-
-
-
+<br>
+Con la gráfica anterior podemos pensar en un modelo que de tamaño esperado por lo que nos interesa crear ahora un último modelo con tamaño esperado igual a dos:
 ```{r}
 
+#por default busca sólo tomar una variable
+model5 <- bsts( HSN1FNSA~ .,
+               state.specification = ss1,
+               niter = 2000,
+               data = select(data_housing, -1),
+               expected.model.size = 2)
+
+plot(model5)
+plot(model5, "components")
+# model3
+pred5 <- predict(model5, horizon = 3, newdata = new_data)
+plot(pred5, plot.original = 102)
+
 ```
 
 
+
+Para saber si realmente hay una mejora usando los datos de Google comparamos los tres modelos, que no descratamos, con la gráfica de errores acumulados de predicción a un paso y vemos que el modelo de tamaño dos que incluye las variables explicativas tiene mejor desempeño.
+
+```{r}
+CompareBstsModels(list("Trend" = model1,
+                       "Trend + Season" = model2,
+                       "Trend + Season + 2Vars" = model5),
+                  colors = c("black", "red", "blue"))
+```
+<br>
+En esta gráfica se puede ver que para el año 2005 que es donde empieza una tendecia a la baja más notable, y que corresponde al periodo 28, la diferencia de los errores acumulados se va haciendo más grande entre los modelos que no incluyen variables contra los que si.
+
+Si quisieramos verificar si los residuos para este modelo se pueden ver como ruido blanco podemos verlo con la siguiente gráfica.
+```{r, message = FALSE, warning = FALSE}
+pred_errors_tbl <- bsts.prediction.errors(model5)$in.sample |> 
+  t() |> as_tibble() |>
+  mutate(t = 1:102) |> 
+  pivot_longer(-c(t), names_to = "sim", values_to = "valor") |>
+  group_by(t) |> 
+  summarise(valor = mean(valor)) |> 
+  as_tsibble(index = t)
+
+ACF(pred_errors_tbl, valor, lag_max = 20) |> 
+  autoplot() + ylim(c(-1,1))
+```
+
+
+
+<br>
+<br>
 
 ## Conclusión
 
