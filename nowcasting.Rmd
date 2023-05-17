@@ -94,13 +94,11 @@ head(data_housing |> select(1:10))
 
 
 <br>
-<br>
+## Serie de Tiempo
 
 #### Visualización de los registros
-Las ventas de casas nuevas alcanzaron su punto máximo en marzo de 2005 y
-han estado disminuyendo desde entonces.
   
-```{r echo = FALSE}
+```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
 # lectura de datos 
 housing <- read.csv("./data/HSN1FNSA.csv", header = T) |> 
   mutate(DATE = as.Date(DATE)) |> 
@@ -110,18 +108,34 @@ housing <- read.csv("./data/HSN1FNSA.csv", header = T) |>
 # sd(housing$HSN1FNSA)   #32.9728 
 # xi = zi*sd + mu
 
-ggplot(housing, aes(x=DATE,y=HSN1FNSA, group = 1))+geom_line()+
+ggplot(housing, aes(x=DATE,y=HSN1FNSA, group = 1))+geom_line(size=1)+
   xlab("Fecha")+
-  ylab("Casas en miles")
+  ylab("Viviendas en miles")+
+  theme_bw()
 
 
 ```
 
-Además, podemos intuir que existe una tendencia decreciente y una
-estacionalidad mensual, por lo que sería interesante ver las gráficas
-ACF y PACF.
+Gráficando las ventas de casas nuevas, observamos que alcanzaron su punto máximo en marzo de 2005.
 
-```{r echo = FALSE}
+-   Su principal característica es la tendencia decreciente.
+
+-   Esta serie también tiene algo de estacionalidad mensual.
+  
+  
+ ```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=7, fig.margin = TRUE}
+
+  gg_season(housing, HSN1FNSA, labels="right", labels_right_nudge=4, size=1, labels_repel = TRUE) + 
+  xlab("Mes")+
+  ylab("Viviendas en miles")+
+  theme_bw()
+  
+```
+  
+Podemos observar un patrón fuerte de estacionalidad en los primeros tres años. Con el mes de Marzo con un pico de ventas importante, una disminución el resto del año con un ligero repunte en el mes de Octubre. A partir de Abril 2007 se observa un comportamiento atípico relacionado a la crisis sufrida en el mercado americano. Para los años 2011 y 2012 podemos observar nuevamente una ligera estacionalidad mensual.  
+  
+
+```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
 
 # y <- ts(housing$HSN1FNSA, freq = 12, start = c(2004,1))
 # 
@@ -135,7 +149,7 @@ feasts::ACF(housing, HSN1FNSA, lag_max = 30) |> autoplot()
 
 (INTERPRETACION DE LAS GRÁFICAS)
 
-```{r}
+```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
 feasts::PACF(housing, HSN1FNSA, lag_max = 30) |> autoplot() 
 ```
 
