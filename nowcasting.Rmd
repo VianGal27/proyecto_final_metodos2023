@@ -209,9 +209,10 @@ data_housing <- tail(data_housing, 102)
 ss1 <- AddLocalLinearTrend(list(), data_housing$HSN1FNSA)
 model1 <- bsts(data_housing$HSN1FNSA,
                state.specification = ss1,
-               niter = 2000)
+               niter = 2000,
+               ping = 2000)
 
-plot(model1)
+#plot(model1)
 plot(model1, "components")
 
 pred1 <- predict(model1, horizon = 3)
@@ -224,7 +225,7 @@ model2 <- bsts(data_housing$HSN1FNSA,
                state.specification = ss2,
                niter = 2000)
 
-plot(model2)
+#plot(model2)
 plot(model2, "components")
 
 pred2 <- predict(model2, horizon = 3)
@@ -241,7 +242,7 @@ model3 <- bsts(data_housing$HSN1FNSA,
                state.specification = ss3,
                niter = 2000, seed=12)
 
-plot(model3)
+#plot(model3)
 plot(model3, "components")
 
 pred3 <- predict(model3, horizon = 3)
@@ -269,7 +270,7 @@ model4 <- bsts( HSN1FNSA~ .,
                data = select(data_housing, -1),
                expected.model.size = 5)
 
-plot(model4)
+#plot(model4)
 plot(model4, "components")
 # model3
 pred4 <- predict(model4, horizon = 3, newdata = new_data)
@@ -292,7 +293,7 @@ model5 <- bsts( HSN1FNSA~ .,
                data = select(data_housing, -1),
                expected.model.size = 2)
 
-plot(model5)
+#plot(model5)
 plot(model5, "components")
 # model3
 pred5 <- predict(model5, horizon = 3, newdata = new_data)
@@ -311,6 +312,7 @@ CompareBstsModels(list("Trend" = model1,
                   colors = c("black", "red", "blue"))
 ```
 <br>
+--verificar periodo 28
 En esta gráfica se puede ver que para el año 2005 que es donde empieza una tendecia a la baja más notable, y que corresponde al periodo 28, la diferencia de los errores acumulados se va haciendo más grande entre los modelos que no incluyen variables contra los que si.
 
 Si quisieramos verificar si los residuos para este modelo se pueden ver como ruido blanco podemos verlo con la siguiente gráfica.
