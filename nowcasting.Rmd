@@ -176,9 +176,14 @@ Para lo antes mencionado, los modelos con enfoque bayesiano que buscamos impleme
 
 
 #### Selección de Modelo 
+
+Estamos interesados en hacer varios modelos y elejir el que mejor ajuste, uno de estos modelos debe incluir las variables regresoras por lo que eliminamos los últimos 3 meses de nuestros datos que después queremos predecir con este modelo. 
+
 Se realizó un modelo inicial en donde solo se contempla la tendencia.
-```{r}
+```{r, message = FALSE, warning=FALSE}
 #para los estados con tendencia
+new_data <- tail(data_housing, 3)
+data_housing <- tail(data_housing, 102)
 ss1 <- AddLocalLinearTrend(list(), data_housing$HSN1FNSA)
 model1 <- bsts(data_housing$HSN1FNSA,
                state.specification = ss1,
@@ -188,9 +193,9 @@ plot(model1)
 plot(model1, "components")
 
 pred1 <- predict(model1, horizon = 3)
-plot(pred1, plot.original = 105)
+plot(pred1, plot.original = 102)
 ```
-En un segundo modelo nos interesa tomar en cuenta la estacionalidad con periodo fijo de 12 y es  muy claro como hay mejoría de predicción, el intervalo de confianza se hace más pequeño.
+<br>En un segundo modelo nos interesa tomar en cuenta la estacionalidad con periodo fijo de 12 y es  muy claro como hay mejoría de predicción, el intervalo de confianza se hace más pequeño.
 ```{r}
 ss2 <- AddSeasonal(ss1, data_housing$HSN1FNSA, nseasons = 12)
 model2 <- bsts(data_housing$HSN1FNSA,
@@ -201,10 +206,24 @@ plot(model2)
 plot(model2, "components")
 
 pred2 <- predict(model2, horizon = 3)
-plot(pred2, plot.original = 105)
+plot(pred2, plot.original = 102)
  
 ```
 
+Un tercer modelo contempla un componente de autocorelación 2 basado en las gráficas de autocorrelación y autocorrelación parcial previamente modstradas.
+
+```{r}
+ss3 <- AddAr(ss2, data_housing$HSN1FNSA, lags = 2)
+model3 <- bsts(data_housing$HSN1FNSA,
+               state.specification = ss3,
+               niter = 2000)
+
+plot(model3)
+plot(model3, "components")
+
+pred2 <- predict(model3, horizon = 3)
+plot(pred2, plot.original = 102)
+```
 
 
 Para definir si las variables obtenidas con las búsquedas de Google son útiles en la predicción inmediata que buscamos se realizó un un último modelo que considera el componente de regresión con 69 coeficientes para las covariables que queremos usar como regresoras.
@@ -214,21 +233,21 @@ Para definir si las variables obtenidas con las búsquedas de Google son útiles
 
 ```{r message = FALSE, warning = FALSE}
 #por default busca sólo tomar una variable
-model3 <- bsts( HSN1FNSA~ .,
-               state.specification = ss2,
+model4 <- bsts( HSN1FNSA~ .,
+               state.specification = ss3,
                niter = 2000,
                data = select(data_housing, -1),
                expected.model.size = 5)
 
-plot(model3)
-plot(model3, "components")
+plot(model4)
+plot(model4, "components")
 # model3
-# pred3 <- predict(model3, horizon = 3,)
-# plot(pred3, plot.original = 105)
+ pred4 <- predict(model4, horizon = 3, newdata = new_data)
+plot(pred4, plot.original = 103)
 # 
 
 
-ncol(model3$coef)
+ncol(model4$coef)
 ```
 
 
@@ -237,8 +256,9 @@ Para saber si realmente hay una mejora usando los datos de Google comparamos los
 ```{r}
 CompareBstsModels(list("Modelo - trend" = model1,
                        "Modelo - trend + season" = model2,
-                       "Modelo - trend + season + vars" = model3),
-                  colors = c("black", "red", "blue"))
+                       "Modelo - trend + season + AR2" = model3,
+                       "Modelo - trend + season + AR2 + vars" = model4),
+                  colors = c("black", "red", "blue", "orange"))
 ```
 
 
