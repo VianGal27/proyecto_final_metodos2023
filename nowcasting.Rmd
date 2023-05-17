@@ -64,7 +64,7 @@ Los datos empleados para el análisis se obtuvieron de las estadísticas publica
 
 #### Visualización de viviendas nuevas vendidas
 
-```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
+```{r, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
 # lectura de datos 
 housing <- read.csv("./data/HSN1FNSA.csv", header = T) |> 
   mutate(DATE = as.Date(DATE)) |> 
@@ -84,7 +84,7 @@ ggplot(housing, aes(x=DATE,y=HSN1FNSA, group = 1))+geom_line(size=1)+
 
 #### Tendencia
 
-```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
+```{r, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
 ggplot(housing, aes(x=DATE,y=HSN1FNSA, group = 1))+geom_line(size=1, colour="darkgray")+
   xlab("Fecha")+
   ylab("Viviendas en miles")+
@@ -101,7 +101,7 @@ Gráficando la serie de ventas de casas nuevas, observamos que alcanzó su punto
 #### Estacionalidad (mensual)
 
 En la siguiente gráfica tomamos los datos de la serie para comparar su comportamiento por año y ver si se cumple la estacionalidad que se sospecha:
-```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=7, fig.margin = TRUE}
+```{r, warning=FALSE, fig.width=10, fig.height=7, fig.margin = TRUE}
   gg_season(housing, HSN1FNSA, labels="both", labels_right_nudge=4, size=1, labels_repel = TRUE) + 
   xlab("Mes")+
   ylab("Viviendas en miles")+
@@ -114,7 +114,7 @@ Podemos observar un patrón fuerte de estacionalidad en los primeros tres años.
 
 También es de nuestro interés ver analizar las gráficas de autocorrelación y autocorrelación parcial para ver los efectos directos de los datos pasados.
 
-```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
+```{r , warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
 # y <- ts(housing$HSN1FNSA, freq = 12, start = c(2004,1))
 #
 # afc(y)
@@ -131,7 +131,7 @@ También podríamos preguntarnos sobre las correlaciones parciales, es decir, po
 
 Es decir, buscamos la correlación directa, bloqueando la correlación que ocurre a través de otros meses intermedios.
 
-```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
+```{r , warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
 feasts::PACF(housing, HSN1FNSA, lag_max = 30) |> autoplot() 
 ```
 
@@ -165,7 +165,7 @@ Nota: Se decide dejar los últimos 3 meses de nuestra base de datos como "datos 
 
 El primer modelo es nuestro modelo *base* el cual únicamente contempla la tendencia de los datos.
 
-```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
+```{r, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
 
 # Modelo 1
 #para los estados con tendencia
@@ -190,7 +190,7 @@ plot(pred1, plot.original = 102, main = "Predicción de 3 meses")
 
 Para el segundo modelo adicional a la tendencia se agrega el modulo de estacionalidad mensual.
 
-```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
+```{r , warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
 #Modelo 2
 ss2 <- AddSeasonal(ss1, data_housing$HSN1FNSA,nseasons=12)
 model2 <- bsts(data_housing$HSN1FNSA,
@@ -212,7 +212,7 @@ Algo que es importante notar en esta gáfica de predicción a un paso es que hay
 
 El tercer modelo adicional a los elementos anteriores una componente autorregresiva de nivel 12 AR(12). Vale la pena mencionar que este modelo que incluye AR(12) se hizo posteriormente a un modelo con AR(1), que se diseñó siguiendo la lógica de los resultados obtenidos con las gráficas de autocorrelación y autocorrelación parcial, que decidimos descaratr porque este modelo no agregaba información a los dos modelos previos. 
 
-```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
+```{r , warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
 #Modelo3
 ss3 <- AddAr(ss2, data_housing$HSN1FNSA, lags = 12)
 model3 <- bsts(data_housing$HSN1FNSA,
@@ -231,7 +231,7 @@ Y nuevamente obtenemos un modelo con predicciones a un paso más precisas.
 
 Comparamos los tres modelos anteriores con la siguiente gráfica donde vemos los errores acumulados para cada modelo. El tercer modelo es claramente el de mejor desempeño. Cabe resaltar que el modelo que contempla tendencia y estacionalidad tiene peor desempeño al llegar a 80 meses. Esto se puede explicar ya que como veiamos la estacionalidad (mensual) esta marcada pero no en todos los años, mientras que la tendencia decreciente ocurría la mayor parte del tiempo.
 
-```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
+```{r , warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
 #Comparación 3 modelos
 CompareBstsModels(list("trend" = model1,
                        "trend + season" = model2,
@@ -245,7 +245,7 @@ Para la construcción de los siguientes dos modelos utilizaremos información ob
 
 
 <center>![](./google_corr.png)</center>
-
+Las siguiente tabla incluye la base que usamos con algunas de las búsquedas que nos arrojó Google Correlate: 
 ```{r}
 #data_housing <- read.csv("./data/HSN1FNSA_correlate.csv")
 head(data_housing |> select(1:10))
@@ -261,7 +261,7 @@ Para comprender mejor el valor de los datos de Google Trends, ajustamos un model
 
 Cabe mencionar que el modelo con los datos de Google Trends continúa acumulando errores a un ritmo más o menos constante. Esto es digno de mención, ya que es ampliamente reconocido que el problema más desafiante en el pronóstico de series de tiempo económicas está en predecir los "puntos de inflexión". En este modelo, el componente de regresión explica una cantidad sustancial de variación de nuestros datos.
 
-```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
+```{r , warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
 #por default busca sólo tomar una variable
 model4 <- bsts( HSN1FNSA~ .,
                state.specification = ss2,
@@ -280,7 +280,7 @@ plot(pred4, plot.original = 102, main = "Predicción de 3 meses")
 
 <br> Nos interesa ver cuales fueron las variables seleccionadas para el modelo 4. La siguiente gráfica muestra las probabilidades posteriores de inclusión las variables que tienen las más altas probabilidades
 
-```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
+```{r, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
 plot(model4, "coefficients", inc=.15, main = "Top de variables seleccionadas para el modelo 4")
 ```
 
@@ -288,7 +288,7 @@ Las barras están coloreadas según la probabilidad de que el coeficiente sea po
 
 Para determinar si realmente existe una mejora utilizando los datos de Google, comparamos los tres modelos anteriores con el nuevo modelo. Al observar la gráfica de errores acumulados de predicción a un paso, podemos ver que el modelo que incluye las variables explicativas muestra un mejor rendimiento a partir del mes 18 ya que los errores acumulados para este crecen de manera más lenta en comparación con los otros modelos.
 
-```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=8, fig.margin = TRUE}
+```{r, warning=FALSE, fig.width=10, fig.height=8, fig.margin = TRUE}
 CompareBstsModels(list("Trend" = model1,
                        "Trend + Season" = model2,
                        "Trend + Season + AR(12)" = model3,
@@ -299,14 +299,14 @@ CompareBstsModels(list("Trend" = model1,
 <br> En esta gráfica se puede ver que para Mayo 2007 que es cuando empieza una tendecia a la baja más notable, y que corresponde al periodo 29, la diferencia de los errores acumulados se va haciendo más grande entre los modelos que no incluyen variables contra el que si.
 
 La gráfica en donde se compara los estados posteriores en el modelo 4 con los datos reales estandarizados del número de ventas es:
-```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
+```{r , warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
 plot(model4, main = "Datos actuales vs Datos ajustados")
 ```
 
 
 Y por último, si quisieramos verificar si los residuos para el último modelo se pueden ver como ruido blanco podemos verlo con la siguiente gráfica ACF. Este es un buen indicativo de que se sumple nuestro supuesto inicial sobre los errores.
 
-```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
+```{r , warning=FALSE, fig.width=10, fig.height=5, fig.margin = TRUE}
 pred_errors_tbl <- bsts.prediction.errors(model4)$in.sample |> 
   t() |> as_tibble() |>
   mutate(t = 1:102) |> 
