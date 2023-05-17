@@ -88,7 +88,7 @@ Las cifras en esta base obtenida con la herramienta de Google están estandariza
 
 
 ```{r}
-data_housing <- read.csv("./data/econ-HSN1FNSA.csv")
+data_housing <- read.csv("./data/HSN1FNSA_correlate.csv.csv")
 head(data_housing |> select(1:10))
 ```
 
@@ -123,7 +123,7 @@ Gráficando las ventas de casas nuevas, observamos que alcanzaron su punto máxi
 -   Esta serie también tiene algo de estacionalidad mensual.
   
   
- ```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=7, fig.margin = TRUE}
+```{r echo = FALSE, warning=FALSE, fig.width=10, fig.height=7, fig.margin = TRUE}
 
   gg_season(housing, HSN1FNSA, labels="right", labels_right_nudge=4, size=1, labels_repel = TRUE) + 
   xlab("Mes")+
